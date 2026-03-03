@@ -1,0 +1,308 @@
+<!doctype html>
+<notebook theme="sun-faded">
+  <title>Untitled</title>
+  <script id="1" type="text/markdown">
+    # Untitled
+  </script>
+  <script id="2" type="module" pinned="">
+    // Esta célula pode ser removida agora
+  </script>
+  <script id="9" type="module" pinned="">
+    // Gerador de Diálogos Kardashian-Beckett - Versão Clean em Inglês
+    const beckettKardashianApp = {
+      // Base de dados para n-gramas em inglês
+      beckettPhrases: [
+        "Waiting", "Always waiting", "Can't go on", "I'll go on",
+        "Nothing happens", "Nobody comes", "Nobody goes", "Perhaps today", "Perhaps not",
+        "What to do", "What not to do", "Silence", "Then words",
+        "Yesterday", "What yesterday", "Tomorrow will be", "Like today", "We are here", "Why",
+        "End", "Beginning again", "Emptiness", "Remains", "Always", "Never", "Perhaps"
+      ],
+
+      kardashianPhrases: [
+        "my contour", "is perfect", "need to post", "another selfie",
+        "the drama", "never ends", "my brand", "is everything", "toxic relationship",
+        "consumes me", "the fame", "is fleeting", "the money", "doesn't fulfill",
+        "jealousy", "between sisters", "social media", "is empty", "perfect man",
+        "doesn't exist", "perfect body", "is illusion", "followers", "abandon me"
+      ],
+
+      // Personagens
+      characters: ["Kim", "Khloe", "Kourtney", "Kris", "Kendall", "Kylie"],
+
+      // Objetos e ações para contextualizar
+      objects: [
+        "the cracked mirror", "the silent phone", "the broken camera",
+        "the melted lipstick", "the plastic crown", "the torn dress"
+      ],
+
+      actions: [
+        "applies gloss mechanically", "counts nonexistent followers",
+        "retakes the same selfie", "searches for the lost filter",
+        "embraces the void", "dances for no one"
+      ],
+
+      // Modelo n-gram simples para gerar continuações
+      ngramModel: {
+        "Waiting": ["always", "for likes", "for fame", "for nothing"],
+        "always": ["waiting", "posting", "pretending", "crying"],
+        "Can't": ["go on", "stop", "post", "pretend"],
+        "go on": ["I'll go on", "but I continue", "it's impossible"],
+        "I'll": ["go on", "post", "wait", "cry"],
+        "Nothing": ["happens", "changes", "matters", "is real"],
+        "happens": ["Nobody comes", "Only emptiness", "Just likes"],
+        "Perhaps": ["today", "tomorrow", "never", "always"],
+        "today": ["Perhaps not", "will be different", "like yesterday"],
+        "What": ["to do", "to post", "to feel", "to wait"],
+        "to do": ["What not to do", "Continue", "Stop"],
+        "my": ["contour", "drama", "emptiness", "fear"],
+        "contour": ["is perfect", "falls apart", "is illusion"],
+        "need": ["to post", "to be loved", "to exist", "to continue"],
+        "to post": ["another selfie", "the void", "the pain"],
+        "drama": ["never ends", "consumes me", "is everything"],
+        "fame": ["is fleeting", "kills me", "doesn't exist"],
+        "emptiness": ["remains", "grows", "swallows me", "is all"]
+      },
+
+      // Função para escolher próxima palavra baseada em n-gram
+      getNextWord(currentWord) {
+        const options = this.ngramModel[currentWord];
+        if (options && options.length > 0) {
+          return options[Math.floor(Math.random() * options.length)];
+        }
+        // Fallback para palavras aleatórias
+        const allPhrases = [...this.beckettPhrases, ...this.kardashianPhrases];
+        return allPhrases[Math.floor(Math.random() * allPhrases.length)];
+      },
+
+      // Gerador de frase usando n-gram
+      generatePhrase(startWord, maxLength = 6) {
+        let phrase = [startWord];
+        let currentWord = startWord;
+
+        for (let i = 0; i < maxLength - 1; i++) {
+          const nextWord = this.getNextWord(currentWord);
+          phrase.push(nextWord);
+          currentWord = nextWord.split(' ').pop(); // Pega a última palavra para continuar
+
+          // Para em pontos naturais
+          if (nextWord.includes('.') || Math.random() < 0.3) break;
+        }
+
+        return phrase.join(' ');
+      },
+
+      // Função para escolher elemento aleatório
+      random(array) {
+        return array[Math.floor(Math.random() * array.length)];
+      },
+
+      // Estado da conversa
+      conversationState: {
+        currentSpeaker: 0,
+        dialogueCount: 0,
+        context: null
+      },
+
+      // Gerador de linha de diálogo auto-responsiva
+      generateResponseLine() {
+        const speaker = this.characters[this.conversationState.currentSpeaker];
+
+        // Escolhe um starter baseado no contexto ou aleatório
+        const starters = ["Waiting", "Can't", "Perhaps", "What", "my", "need", "drama", "emptiness"];
+        const starter = this.random(starters);
+
+        const line = this.generatePhrase(starter);
+        const action = Math.random() < 0.4 ? `(${this.random(this.actions)})` : '';
+        const object = Math.random() < 0.3 ? ` Do you see ${this.random(this.objects)}?` : '';
+
+        // Alterna o speaker
+        this.conversationState.currentSpeaker =
+          (this.conversationState.currentSpeaker + 1) % this.characters.length;
+
+        return `${speaker}: ${line}.${object} ${action}`;
+      },
+
+      // Reset da conversa
+      resetConversation() {
+        this.conversationState.currentSpeaker = Math.floor(Math.random() * this.characters.length);
+        this.conversationState.dialogueCount = 0;
+      }
+    };
+
+    // Interface do usuário minimalista
+    const container = htl.html`
+      <div style="max-width: 800px; margin: 0 auto; padding: 40px 20px; font-family: 'Times New Roman', serif; color: #000;">
+        <h1 style="text-align: center; color: #000; margin-bottom: 40px; font-weight: normal; font-size: 24px;">
+          Kardashian-Beckett Dialogues
+        </h1>
+
+        <div style="text-align: center; margin-bottom: 30px;">
+          <button id="startBtn" style="
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-family: inherit;
+          ">
+            Start
+          </button>
+
+          <button id="stopBtn" style="
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+          ">
+            Stop
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+          <label>Speed:
+            <input type="range" id="speedSlider" min="500" max="3000" value="1500" style="margin: 0 10px;">
+            <span id="speedDisplay">1.5s</span>
+          </label>
+        </div>
+
+        <div id="dialogue" style="
+          background: #fff;
+          border: 1px solid #000;
+          padding: 30px;
+          margin: 20px 0;
+          line-height: 1.6;
+          font-size: 16px;
+          min-height: 400px;
+          max-height: 600px;
+          overflow-y: auto;
+          color: #000;
+        ">
+          <em style="color: #666;">Click "Start" to begin the automatic dialogue generation...</em>
+        </div>
+
+        <div style="
+          background: #f9f9f9;
+          border: 1px solid #ddd;
+          padding: 20px;
+          margin-top: 30px;
+          font-size: 13px;
+          color: #000;
+        ">
+          <h3 style="margin-top: 0; color: #000; font-weight: normal;">N-gram System</h3>
+          <p>Dialogues generate automatically using an n-gram model that combines Beckett's linguistic patterns with Kardashian themes.</p>
+          <p>Each line builds on the previous one, creating an infinite, absurd conversation that flows between existentialism and futility.</p>
+        </div>
+      </div>
+    `;
+
+    // Controles da interface
+    const startBtn = container.querySelector('#startBtn');
+    const stopBtn = container.querySelector('#stopBtn');
+    const dialogueDiv = container.querySelector('#dialogue');
+    const speedSlider = container.querySelector('#speedSlider');
+    const speedDisplay = container.querySelector('#speedDisplay');
+
+    let conversationInterval = null;
+    let isRunning = false;
+
+    // Atualizar display de velocidade
+    speedSlider.addEventListener('input', () => {
+      const speed = speedSlider.value;
+      speedDisplay.textContent = `${(speed / 1000).toFixed(1)}s`;
+    });
+
+    // Função para adicionar nova linha
+    function addDialogueLine() {
+      const newLine = beckettKardashianApp.generateResponseLine();
+      const lineElement = htl.html`<div style="margin-bottom: 15px; opacity: 0; transition: opacity 0.5s; color: #000;">${newLine}</div>`;
+
+      dialogueDiv.appendChild(lineElement);
+
+      // Fade in effect
+      setTimeout(() => {
+        lineElement.style.opacity = '1';
+      }, 100);
+
+      // Auto-scroll
+      dialogueDiv.scrollTop = dialogueDiv.scrollHeight;
+
+      // Limitar número de linhas (manter últimas 20)
+      const lines = dialogueDiv.children;
+      if (lines.length > 20) {
+        dialogueDiv.removeChild(lines[0]);
+      }
+    }
+
+    // Iniciar conversa
+    startBtn.addEventListener('click', () => {
+      if (isRunning) return;
+
+      isRunning = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      // Reset e primeira linha
+      beckettKardashianApp.resetConversation();
+      dialogueDiv.innerHTML = '';
+      addDialogueLine();
+
+      // Intervalo para novas linhas
+      conversationInterval = setInterval(() => {
+        addDialogueLine();
+      }, parseInt(speedSlider.value));
+    });
+
+    // Parar conversa
+    stopBtn.addEventListener('click', () => {
+      if (!isRunning) return;
+
+      isRunning = false;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      if (conversationInterval) {
+        clearInterval(conversationInterval);
+        conversationInterval = null;
+      }
+    });
+
+    // Estado inicial
+    stopBtn.disabled = true;
+
+    display(container);
+  </script>
+  <script id="3" type="module" pinned="">
+    // Esta célula pode ser removida agora
+  </script>
+  <script id="4" type="module" pinned="">
+    // Esta célula pode ser removida agora
+  </script>
+  <script id="6" type="module" pinned="">
+    // Esta célula pode ser removida agora
+  </script>
+  <script id="5" type="text/markdown">
+    ## Como funciona o gerador
+
+    Este gerador combina:
+
+    **Elementos de Samuel Beckett:**
+    - Diálogos minimalistas e repetitivos
+    - Temas existenciais sobre espera e vazio
+    - Estruturas circulares e absurdas
+    - Objetos simbólicos misteriosos
+
+    **Temas dos Kardashians:**
+    - Obsessão com aparência e fama
+    - Drama familiar
+    - Relacionamentos conturbados
+    - Cultura das redes sociais
+
+    O resultado é uma sátira que transforma a superficialidade do reality show em profundidade existencial absurda, como se os personagens estivessem presos em um ciclo eterno de futilidade consciente.
+  </script>
+</notebook>

@@ -1,0 +1,225 @@
+<!doctype html>
+<notebook theme="sun-faded">
+  <title>Untitled</title>
+  <script id="1" type="text/markdown">
+    # Untitled
+  </script>
+  <script id="2" type="module" pinned="">
+    // Markov Chain Text Generator inspired by "cidade city cité"
+    import {interval} from "npm:d3-timer";
+
+    // Default text inspired by multilingual concrete poetry
+    const defaultText = `cidade city cité ciudad stadt ville metropolis urban urbano urbain metropolitan metro polis pólis civitas urbs borough bourg borgo burgo burg town pueblo pueblo vila village aldeia aldea dorf dort dort cidade city cité ciudad stadt ville metropolis urban urbano urbain metropolitan metro polis pólis civitas urbs borough bourg borgo burgo burg town pueblo pueblo vila village aldeia aldea dorf dort dort rua street rue calle straße strada via camino chemin weg road estrada route carretera autobahn autopista autoroute highway rodovia avenida avenue boulevard alameda promenade passeio walk caminhada marche spaziergang passeggiata paseo promenade flaneur flâneur vagabundo wanderer errante nomade nomad nômada vagabond bohemian boêmio bohème bohemio zigeuner gitano gitan cigano roma romani sinti kalderash lovari machvaya kalé caló romanó rromani rromanés
+
+    return poluphloisbos;
+
+    multitudinous seas incarnadine o oceano oco e regougo a proa abrindo um sulco a popa deixando um sulco como uma lavra de lazúli uma cicatriz contínua na polpa violeta do oceano se abrindo como uma vulva violeta a turva vulva violeta do oceano óinopa pónton cor de vinho ou cor de ferrugem conforme o sol batendo no refluxo de espumas o mar multitudinário miúdas migalhas farinha de água salina na ponta das maretas esfarelando ao vento iris nuntia junonis cambiando suas plumas mas o mar mas a escuma mas a espuma mas a espumaescuma do mar recomeçado e recomeçando o tempo abolido no verde vário no aquário equóreo o verde flore como uma árvore de verde e se vê é azul é roxo é púrpura é iodo é de novo verde glauco verde infestado de azuis e súlfur e pérola e púrpur mas o mar mas o mar polifluente se ensafirando a turquesa se abrindo deiscente como um fruto que abre e apodrece em roxoamarelo pus de sumo e polpa e vurmo e goma e mel e fel mas o mar depois do mar depois do mar o mar ainda poliglauco polifosfóreo noturno agora sob estrelas extremas mas liso e negro como uma pele de fera um cetim de fera um macio de pantera o mar polipantera torcendo músculos lúbricos sob estrelas trémulas o mar como um livro rigoroso e gratuito como esse livro onde ele é absoluto de azul esse livro que se folha e refolha que se dobra e desdobra nele pele sob pele pli selon pli o mar poliestentóreo também oceano maroceano soprando espondeus homéreos como uma verde bexiga de plástico enfunada o mar cor de urina sujo de salsugem e de marugem de negrugem e de ferrugem o mar mareado a água gorda do mar marasmo placenta plácida ao sol chocada o mar manchado quarando ao sol lençol do mar mas agora mas aurora e o liso se reparte sob veios vinho a hora poliflui no azul verde e discorre e recorre e corre e entrecorre como um livro polilendo-se polilido sob a primeira tinta da aurora agora o rosício roçar rosa da dedirrósea agora aurora pois o mar remora demora na hora na paragem da hora e de novo recolhe sua safra de verdes como se águas fossem redes e sua ceifa de azuis como se um fosse plus fosse dois fosse três fosse mil verdes vezes verde
+    vide azul mas o mar reverte mas o mar verte mas o mar é-se como o aberto de um livro aberto e esse aberto é o livro que ao mar reverte e o mar converte pois de mar se trata do mar que bate sua nata de escuma se eu lhe disser que o mar começa você dirá que ele cessa se eu
+    Ihe disser que ele avança você dirá que ele cansa se eu lhe disser que ele fala você dirá que ele cala e tudo será o mar e nada será o mar o mar mesmo aberto atrás da popa como uma fruta roxa uma vulva frouxa no seu mel de orgasmo no seu mal de espasmo o mar gárgulo e gargáreo gorjeando gárrulo esse mar esse mar livro esse livro mar marcado e vário murchado e flóreo multitudinoso mar purpúreo marúleo mar azúleo e mas e pois e depois e agora e se e embora e quando e outrora e mais e ademais mareando marujando marlunando marlevando marsoando polúphloisbos`;
+
+    // Create Markov chain from text
+    function buildMarkovChain(text, order = 2) {
+      const chain = new Map();
+      const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 0);
+
+      for (let i = 0; i <= words.length - order; i++) {
+        const key = words.slice(i, i + order).join(' ');
+        const next = words[i + order] || words[0]; // Loop back to beginning
+
+        if (!chain.has(key)) {
+          chain.set(key, []);
+        }
+        chain.get(key).push(next);
+      }
+
+      return chain;
+    }
+
+    // Generate text with controlled randomness
+    function generateText(chain, randomness = 0.5, length = 100) {
+      if (chain.size === 0) return '';
+
+      const keys = Array.from(chain.keys());
+      let current = keys[Math.floor(Math.random() * keys.length)];
+      const result = [current];
+
+      for (let i = 0; i < length; i++) {
+        const possibleNext = chain.get(current) || [];
+        if (possibleNext.length === 0) {
+          current = keys[Math.floor(Math.random() * keys.length)];
+          continue;
+        }
+
+        let next;
+        if (Math.random() < randomness) {
+          // High randomness: pick any word from the chain
+          const allWords = Array.from(new Set(Array.from(chain.values()).flat()));
+          next = allWords[Math.floor(Math.random() * allWords.length)];
+        } else {
+          // Low randomness: follow Markov chain
+          next = possibleNext[Math.floor(Math.random() * possibleNext.length)];
+        }
+
+        result.push(next);
+
+        // Update current key
+        const currentWords = current.split(' ');
+        currentWords.shift();
+        currentWords.push(next);
+        current = currentWords.join(' ');
+
+        if (!chain.has(current)) {
+          current = keys[Math.floor(Math.random() * keys.length)];
+        }
+      }
+
+      return result.join(' '); // Add spaces back for readability
+    }
+
+    // Input controls
+    const inputText = view(Inputs.textarea({
+      label: "Input Text (or use default multilingual text)",
+      value: defaultText,
+      rows: 6,
+      width: "100%"
+    }));
+
+    const randomnessLevel = view(Inputs.range([0, 1], {
+      label: "Randomness Level",
+      value: 0.3,
+      step: 0.01,
+      width: "100%"
+    }));
+
+    const speed = view(Inputs.range([50, 200], {
+      label: "Animation Speed (pixels per second)",
+      value: 100,
+      step: 10,
+      width: "100%"
+    }));
+
+    const isRunning = view(Inputs.toggle({
+      label: "Start/Stop Stream",
+      value: true
+    }));
+
+    const refreshButton = view(Inputs.button("Refresh Text Now"));
+
+    // Export functions for use in other cells
+    window.buildMarkovChain = buildMarkovChain;
+    window.generateText = generateText;
+    window.defaultText = defaultText;
+    window.refreshTrigger = refreshButton; // Export the button click count
+  </script>
+  <script id="5" type="module" pinned="">
+    // Text streaming animation (references the input values from the previous cell)
+    const textContainer = display(htl.html`
+      <div style="
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        font-size: 18px;
+        font-weight: bold;
+        position: relative;
+        border: 2px solid #333;
+        margin: 20px 0;
+      ">
+        <div id="streaming-text" style="
+          position: absolute;
+          white-space: nowrap;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #ffdd00;
+          text-shadow: 0 0 10px #ffdd00;
+          left: 100%;
+        "></div>
+      </div>
+    `);
+
+    // Animation variables
+    let currentChain = window.buildMarkovChain(inputText || window.defaultText);
+    let streamingText = window.generateText(currentChain, randomnessLevel, 300).replace(/\s+/g, ''); // Remove all spaces
+    let animationFrame;
+    let lastTime = 0;
+    let position = textContainer.offsetWidth;
+    let lastTextUpdate = 0;
+    let lastRefreshTrigger = refreshButton; // Track button clicks
+
+    function animate(currentTime) {
+      if (!isRunning) {
+        animationFrame = requestAnimationFrame(animate);
+        return;
+      }
+
+      const textElement = textContainer.querySelector('#streaming-text');
+      if (!textElement) {
+        animationFrame = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Check if refresh button was clicked or 5 seconds have passed
+      const shouldRefresh = (refreshButton !== lastRefreshTrigger) || (currentTime - lastTextUpdate > 5000);
+
+      if (shouldRefresh) {
+        currentChain = window.buildMarkovChain(inputText || window.defaultText);
+        streamingText = window.generateText(currentChain, randomnessLevel, 300).replace(/\s+/g, ''); // Remove all spaces
+        lastTextUpdate = currentTime;
+        lastRefreshTrigger = refreshButton;
+      }
+
+      // Calculate movement
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      // Move text from right to left
+      position -= (speed * deltaTime) / 1000;
+
+      // Reset position when text completely exits left side
+      const textWidth = streamingText.length * 12; // Approximate character width
+      if (position < -textWidth) {
+        position = textContainer.offsetWidth;
+        // Generate new text when it loops
+        currentChain = window.buildMarkovChain(inputText || window.defaultText);
+        streamingText = window.generateText(currentChain, randomnessLevel, 300).replace(/\s+/g, ''); // Remove all spaces
+      }
+
+      textElement.style.left = `${position}px`;
+      textElement.textContent = streamingText;
+
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    // Start animation
+    animationFrame = requestAnimationFrame(animate);
+
+    // Stop animation when cell is invalidated
+    invalidation.then(() => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    });
+  </script>
+  <script id="4" type="text/markdown">
+    ## Markov Chain Poetry Generator
+
+    This generator creates a continuous stream of text inspired by Augusto de Campos' concrete poetry "cidade city cité". The text flows eternally from right to left without spaces, creating a hypnotic blend of languages and meanings.
+
+    **Features:**
+    - **Markov Chain Generation**: Creates new text based on patterns in your input
+    - **Randomness Control**: Higher levels create more abstract, unintelligible text while preserving familiar fragments
+    - **Speed Control**: Adjust how fast the text streams across the screen
+    - **Multilingual Default**: Starts with words for "city" and "street" in multiple languages
+    - **Continuous Flow**: Text streams endlessly without spaces, creating the "babelization" effect
+
+    **How it works:**
+    - The Markov chain analyzes word patterns in your input text
+    - Lower randomness follows the original patterns more closely
+    - Higher randomness blends words more chaotically, creating that "strange yet familiar" feeling
+    - The streaming display creates the visual poetry effect of continuous, flowing language
+
+    Try adjusting the randomness level to see how familiar words gradually dissolve into abstract linguistic fragments!
+  </script>
+</notebook>

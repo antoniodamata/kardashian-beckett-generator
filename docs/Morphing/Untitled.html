@@ -1,0 +1,553 @@
+<!doctype html>
+<notebook theme="sun-faded">
+  <title>Untitled</title>
+  <script id="1" type="text/markdown">
+    # Untitled
+  </script>
+  <script id="4" type="module" pinned="">
+    // Ultra-smooth organic word morpher with perfect DOM synchronization - Multi-word version
+    class OrganicWordMorpher {
+      constructor(words, container) {
+        this.words = words;
+        this.container = container;
+        this.wordCount = 4; // Number of words to display
+        this.letterCount = 5; // Letters per word
+
+        // Initialize current and target words
+        this.currentWords = [];
+        this.targetWords = [];
+        for (let i = 0; i < this.wordCount; i++) {
+          this.currentWords.push(this.getRandomWord());
+          this.targetWords.push(this.getRandomWord());
+        }
+
+        this.isRunning = true;
+
+        // Create individual letter DOM elements for each word
+        this.wordElements = [];
+        this.letterElements = [];
+        this.letterStates = [];
+
+        // Organic timing properties
+        this.globalTime = 0;
+        this.morphTriggerTime = 0;
+        this.nextMorphDelay = this.getRandomMorphDelay();
+
+        // Organic movement parameters
+        this.organicSpeed = 0.8;
+        this.chaosLevel = 0.4;
+
+        this.initializeDOM();
+        this.scheduleNextMorph();
+      }
+
+      getRandomWord() {
+        return this.words[Math.floor(Math.random() * this.words.length)];
+      }
+
+      getRandomMorphDelay() {
+        const baseDelay = 2000 + Math.random() * 3000;
+        const organicVariation = Math.random() < 0.3 ? Math.random() * 1000 : 0;
+        return baseDelay + organicVariation;
+      }
+
+      initializeDOM() {
+        this.container.innerHTML = '';
+        this.wordElements = [];
+        this.letterElements = [];
+        this.letterStates = [];
+
+        for (let wordIndex = 0; wordIndex < this.wordCount; wordIndex++) {
+          // Create word container
+          const wordDiv = document.createElement('div');
+          wordDiv.style.cssText = `
+            display: flex;
+            justify-content: center;
+            line-height: 0.85;
+            margin: 0;
+            padding: 0;
+          `;
+
+          this.container.appendChild(wordDiv);
+          this.wordElements.push(wordDiv);
+
+          const wordLetters = [];
+          const wordStates = [];
+
+          // Create letters for this word
+          for (let letterIndex = 0; letterIndex < this.letterCount; letterIndex++) {
+            const currentChar = this.currentWords[wordIndex][letterIndex] || 'a';
+
+            const letterSpan = document.createElement('span');
+            letterSpan.textContent = currentChar;
+            letterSpan.style.cssText = `
+              display: inline-block;
+              position: relative;
+              transition: none;
+              transform-origin: center;
+              will-change: transform;
+              backface-visibility: hidden;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
+            `;
+
+            wordDiv.appendChild(letterSpan);
+            wordLetters.push(letterSpan);
+
+            wordStates.push({
+              current: currentChar,
+              target: currentChar,
+              morphing: false,
+              morphStart: 0,
+              morphDuration: 0,
+              organicPhase: Math.random() * Math.PI * 2,
+              restlessness: Math.random() * 0.3 + 0.1,
+              lastMorphTime: 0,
+              morphDelay: Math.random() * 300,
+              lastChar: currentChar
+            });
+          }
+
+          this.letterElements.push(wordLetters);
+          this.letterStates.push(wordStates);
+        }
+      }
+
+      scheduleNextMorph() {
+        this.morphTriggerTime = this.globalTime + this.nextMorphDelay;
+        // Update target words
+        for (let i = 0; i < this.wordCount; i++) {
+          this.targetWords[i] = this.getRandomWord();
+        }
+      }
+
+      startLetterMorph(wordIndex, letterIndex) {
+        const state = this.letterStates[wordIndex][letterIndex];
+        const targetChar = this.targetWords[wordIndex][letterIndex] || 'a';
+
+        if (state.current === targetChar) return;
+
+        state.target = targetChar;
+        state.morphing = true;
+        state.morphStart = this.globalTime + state.morphDelay;
+
+        const charDistance = Math.abs(state.current.charCodeAt(0) - targetChar.charCodeAt(0));
+        const baseDuration = 600 + charDistance * 40;
+        const organicVariation = (Math.random() - 0.5) * 200;
+        state.morphDuration = (baseDuration + organicVariation) * (2 - this.organicSpeed);
+      }
+
+      getOrganicChar(fromChar, toChar, progress, letterState) {
+        const fromCode = fromChar.charCodeAt(0);
+        const toCode = toChar.charCodeAt(0);
+
+        // Smoother organic movement
+        const searchPhase = Math.sin(progress * Math.PI * 2.5) * Math.sin(progress * Math.PI * 5);
+        const searchIntensity = Math.sin(progress * Math.PI) * this.chaosLevel * 2;
+        const organicWobble = Math.sin(this.globalTime * 0.002 + letterState.organicPhase) * letterState.restlessness * 0.3;
+
+        let organicProgress = this.organicEase(progress);
+        const searchOffset = (searchPhase * searchIntensity + organicWobble) *
+                            Math.abs(toCode - fromCode) * 0.2;
+
+        let targetCode = fromCode + (toCode - fromCode) * organicProgress + searchOffset;
+
+        // Reduce hesitation for smoother movement
+        if (progress > 0.3 && progress < 0.7 && Math.random() < this.chaosLevel * 0.05) {
+          const hesitation = (Math.random() - 0.5) * Math.abs(toCode - fromCode) * 0.2;
+          targetCode += hesitation;
+        }
+
+        targetCode = Math.max(97, Math.min(122, Math.round(targetCode)));
+        return String.fromCharCode(targetCode);
+      }
+
+      organicEase(t) {
+        // Ultra-smooth easing
+        const smooth = t * t * t * (t * (t * 6 - 15) + 10);
+        const organic = Math.sin(t * Math.PI * 0.5);
+        return smooth * 0.8 + organic * organic * 0.2;
+      }
+
+      updateLetter(wordIndex, letterIndex) {
+        const state = this.letterStates[wordIndex][letterIndex];
+        const element = this.letterElements[wordIndex][letterIndex];
+
+        if (!state.morphing) {
+          // Minimal idle animation to prevent static look
+          const breathe = Math.sin(this.globalTime * 0.001 + state.organicPhase) * 0.01;
+          const restless = Math.sin(this.globalTime * 0.003 + state.organicPhase * 1.5) * state.restlessness * 0.005;
+
+          const transform = `translateY(${(breathe + restless) * 5}px) scale(${1 + breathe * 0.05})`;
+          if (element.style.transform !== transform) {
+            element.style.transform = transform;
+          }
+          return;
+        }
+
+        if (this.globalTime < state.morphStart) return;
+
+        const elapsed = this.globalTime - state.morphStart;
+        const progress = Math.min(1, elapsed / state.morphDuration);
+
+        // Get organic character and only update if different
+        const morphedChar = this.getOrganicChar(state.current, state.target, progress, state);
+        if (morphedChar !== state.lastChar) {
+          element.textContent = morphedChar;
+          state.lastChar = morphedChar;
+        }
+
+        // Smoother transform during morph
+        const morphIntensity = Math.sin(progress * Math.PI) * 0.3;
+        const organicShake = Math.sin(this.globalTime * 0.01 + state.organicPhase) * morphIntensity * this.chaosLevel * 8;
+        const organicScale = 1 + morphIntensity * 0.1;
+
+        const transform = `translateY(${organicShake}px) scale(${organicScale})`;
+        element.style.transform = transform;
+
+        // Complete morph
+        if (progress >= 1) {
+          state.current = state.target;
+          state.morphing = false;
+          state.lastMorphTime = this.globalTime;
+          state.lastChar = state.current;
+          element.style.transform = 'translateY(0px) scale(1)';
+          element.textContent = state.current;
+        }
+      }
+
+      update(deltaTime) {
+        if (!this.isRunning) return;
+
+        this.globalTime += deltaTime;
+
+        if (this.globalTime >= this.morphTriggerTime) {
+          // Start morphing letters across all words
+          for (let wordIndex = 0; wordIndex < this.wordCount; wordIndex++) {
+            for (let letterIndex = 0; letterIndex < this.letterCount; letterIndex++) {
+              if (Math.random() < 0.9) {
+                this.startLetterMorph(wordIndex, letterIndex);
+              }
+            }
+          }
+
+          this.scheduleNextMorph();
+          this.nextMorphDelay = this.getRandomMorphDelay();
+        }
+
+        // Update all letters in all words
+        for (let wordIndex = 0; wordIndex < this.wordCount; wordIndex++) {
+          for (let letterIndex = 0; letterIndex < this.letterCount; letterIndex++) {
+            this.updateLetter(wordIndex, letterIndex);
+          }
+        }
+      }
+
+      setOrganicSpeed(speed) {
+        this.organicSpeed = speed;
+      }
+
+      setChaosLevel(level) {
+        this.chaosLevel = level;
+      }
+
+      start() {
+        this.isRunning = true;
+      }
+
+      stop() {
+        this.isRunning = false;
+      }
+    }
+  </script>
+  <script id="2" type="module" pinned="">
+    // List of 5-letter words for the generator
+    const fiveLetterWords = [
+      "about", "above", "abuse", "actor", "acute", "admit", "adopt", "adult", "after", "again",
+      "agent", "agree", "ahead", "alarm", "album", "alert", "alien", "align", "alike", "alive",
+      "allow", "alone", "along", "alter", "among", "anger", "angle", "angry", "apart", "apple",
+      "apply", "arena", "argue", "arise", "array", "arrow", "aside", "asset", "avoid", "awake",
+      "award", "aware", "badly", "baker", "bases", "basic", "beach", "began", "begin", "being",
+      "below", "bench", "billy", "birth", "black", "blame", "blank", "blast", "blind", "block",
+      "blood", "board", "boast", "boats", "bobby", "bonds", "bonus", "boost", "booth", "bound",
+      "brain", "brand", "brass", "brave", "bread", "break", "breed", "brief", "bring", "broad",
+      "broke", "brown", "build", "built", "buyer", "cable", "calif", "carry", "catch", "cause",
+      "chain", "chair", "chaos", "charm", "chart", "chase", "cheap", "check", "chest", "chief",
+      "child", "china", "chose", "civil", "claim", "class", "clean", "clear", "click", "climb",
+      "clock", "close", "cloud", "coach", "coast", "could", "count", "court", "cover", "craft",
+      "crash", "crazy", "cream", "crime", "cross", "crowd", "crown", "crude", "curve", "cycle",
+      "daily", "dance", "dated", "dealt", "death", "debut", "delay", "depth", "doing", "doubt",
+      "dozen", "draft", "drama", "drank", "drawn", "dream", "dress", "drill", "drink", "drive",
+      "drove", "dying", "eager", "early", "earth", "eight", "elite", "empty", "enemy", "enjoy",
+      "enter", "entry", "equal", "error", "event", "every", "exact", "exist", "extra", "faith",
+      "false", "fault", "fiber", "field", "fifth", "fifty", "fight", "final", "first", "fixed"
+    ];
+  </script>
+  <script id="5" type="text/html">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Arial:wght@900&display=swap');
+
+    .brat-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      background: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      position: relative;
+    }
+
+    .word-display {
+      font-size: 120px;
+      font-weight: 900;
+      color: black;
+      letter-spacing: -8px;
+      filter: blur(3px);
+      margin: 60px 0;
+      font-stretch: condensed;
+      line-height: 0.85;
+      transition: filter 0.1s ease;
+      transform-origin: center;
+      will-change: filter;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeSpeed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: -10px; /* Negative gap to make words almost touch */
+    }
+
+    .controls {
+      display: flex;
+      gap: 40px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px 30px;
+      border-radius: 0;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 150px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-group label {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: black;
+      opacity: 0.8;
+    }
+
+    .control-group input[type="range"] {
+      width: 100px;
+      height: 3px;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 0;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: black;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .control-group input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: black;
+      border-radius: 0;
+      cursor: pointer;
+      border: none;
+      transition: all 0.1s ease;
+    }
+
+    .control-group input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .start-stop-btn {
+      background: black;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      border-radius: 0;
+      transition: all 0.15s ease;
+      min-width: 70px;
+    }
+
+    .start-stop-btn:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .start-stop-btn.stopped {
+      background: #666;
+    }
+
+    .start-stop-btn:active {
+      transform: translateY(0px);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .controls {
+        gap: 20px;
+        padding: 15px 20px;
+        margin-top: 100px;
+      }
+
+      .word-display {
+        font-size: 80px;
+        margin: 40px 0;
+      }
+    }
+    </style>
+
+    <div class="brat-container">
+      <div id="wordDisplay" class="word-display"></div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>BLUR</label>
+          <input type="range" id="blurControl" min="0" max="10" value="3" step="0.1">
+        </div>
+
+        <div class="control-group">
+          <label>SPEED</label>
+          <input type="range" id="speedControl" min="0.2" max="2.0" value="0.8" step="0.1">
+        </div>
+
+        <div class="control-group">
+          <label>CHAOS</label>
+          <input type="range" id="randomnessControl" min="0" max="0.8" value="0.4" step="0.05">
+        </div>
+
+        <div class="control-group">
+          <button id="startStopBtn" class="start-stop-btn">STOP</button>
+  </script>
+  <script id="7" type="module" pinned="">
+    // Debug: Check if morpher is creating content
+    console.log('Current words:', morpher.currentWords);
+    console.log('Word display element:', wordDisplay);
+    console.log('Word display children:', wordDisplay.children.length);
+  </script>
+  <script id="6" type="module" pinned="">
+    // Initialize the ultra-smooth organic word morpher
+    const wordDisplay = document.querySelector('#wordDisplay');
+
+    // Make sure the element exists before creating the morpher
+    if (!wordDisplay) {
+      console.error('Word display element not found!');
+    } else {
+      console.log('Word display element found:', wordDisplay);
+    }
+
+    const morpher = new OrganicWordMorpher(fiveLetterWords, wordDisplay);
+
+    // Get control elements
+    const blurControl = document.querySelector('#blurControl');
+    const speedControl = document.querySelector('#speedControl');
+    const randomnessControl = document.querySelector('#randomnessControl');
+    const startStopBtn = document.querySelector('#startStopBtn');
+
+    // High-performance animation loop with consistent timing
+    let lastTime = performance.now();
+    let animationFrame;
+    let isAnimating = true;
+
+    function animate(currentTime) {
+      const deltaTime = Math.min(currentTime - lastTime, 50); // Cap delta to prevent jumps
+      lastTime = currentTime;
+
+      if (isAnimating && morpher) {
+        morpher.update(deltaTime);
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    // Optimized event listeners with debouncing
+    let blurTimeout;
+    if (blurControl) {
+      blurControl.addEventListener('input', (e) => {
+        clearTimeout(blurTimeout);
+        blurTimeout = setTimeout(() => {
+          if (wordDisplay) {
+            wordDisplay.style.filter = `blur(${e.target.value}px)`;
+          }
+        }, 16); // ~60fps debounce
+      });
+    }
+
+    if (speedControl) {
+      speedControl.addEventListener('input', (e) => {
+        morpher.setOrganicSpeed(parseFloat(e.target.value));
+      });
+    }
+
+    if (randomnessControl) {
+      randomnessControl.addEventListener('input', (e) => {
+        morpher.setChaosLevel(parseFloat(e.target.value));
+      });
+    }
+
+    if (startStopBtn) {
+      startStopBtn.addEventListener('click', () => {
+        isAnimating = !isAnimating;
+        if (isAnimating) {
+          morpher.start();
+          startStopBtn.textContent = 'STOP';
+          startStopBtn.classList.remove('stopped');
+        } else {
+          morpher.stop();
+          startStopBtn.textContent = 'START';
+          startStopBtn.classList.add('stopped');
+        }
+      });
+    }
+
+    // Start the animation with a small delay to ensure DOM is ready
+    setTimeout(() => {
+      animate(performance.now());
+    }, 100);
+
+    // Clean up on invalidation
+    invalidation.then(() => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    });
+
+    // Debug output
+    console.log('Morpher initialized:', morpher);
+    console.log('Word display element:', wordDisplay);
+    console.log('Animation starting...');
+  </script>
+</notebook>

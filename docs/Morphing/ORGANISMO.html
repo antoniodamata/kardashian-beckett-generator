@@ -1,0 +1,276 @@
+<!doctype html>
+<notebook theme="sun-faded">
+  <title>Morphing</title>
+  <script id="1" type="text/markdown">
+    # Morphing
+  </script>
+  <script id="2" type="module" pinned="">
+    // List of 5-letter words for morphing
+    const fiveLetterWords = [
+      "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ACUTE", "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN",
+      "AGENT", "AGREE", "AHEAD", "ALARM", "ALBUM", "ALERT", "ALIEN", "ALIGN", "ALIKE", "ALIVE",
+      "ALLOW", "ALONE", "ALONG", "ALTER", "ANGEL", "ANGER", "ANGLE", "ANGRY", "APART", "APPLE",
+      "APPLY", "ARENA", "ARGUE", "ARISE", "ARRAY", "ARROW", "ASIDE", "ASSET", "AVOID", "AWAKE",
+      "AWARD", "AWARE", "BADLY", "BAKER", "BASES", "BASIC", "BEACH", "BEGAN", "BEGIN", "BEING",
+      "BELOW", "BENCH", "BILLY", "BIRTH", "BLACK", "BLAME", "BLANK", "BLIND", "BLOCK", "BLOOD",
+      "BOARD", "BOOST", "BOOTH", "BOUND", "BRAIN", "BRAND", "BRAVE", "BREAD", "BREAK", "BREED",
+      "BRIEF", "BRING", "BROAD", "BROKE", "BROWN", "BUILD", "BUILT", "BUYER", "CABLE", "CALIF",
+      "CARRY", "CATCH", "CAUSE", "CHAIN", "CHAIR", "CHAOS", "CHARM", "CHART", "CHASE", "CHEAP",
+      "CHECK", "CHEST", "CHIEF", "CHILD", "CHINA", "CHOSE", "CIVIL", "CLAIM", "CLASS", "CLEAN",
+      "CLEAR", "CLICK", "CLIMB", "CLOCK", "CLOSE", "CLOUD", "COACH", "COAST", "COULD", "COUNT",
+      "COURT", "COVER", "CRAFT", "CRASH", "CRAZY", "CREAM", "CRIME", "CROSS", "CROWD", "CROWN",
+      "CRUDE", "CURVE", "CYCLE", "DAILY", "DANCE", "DATED", "DEALT", "DEATH", "DEBUT", "DELAY",
+      "DEPTH", "DOING", "DOUBT", "DOZEN", "DRAFT", "DRAMA", "DRANK", "DREAM", "DRESS", "DRILL",
+      "DRINK", "DRIVE", "DROVE", "DYING", "EAGER", "EARLY", "EARTH", "EIGHT", "ELITE", "EMPTY",
+      "ENEMY", "ENJOY", "ENTER", "ENTRY", "EQUAL", "ERROR", "EVENT", "EVERY", "EXACT", "EXIST",
+      "EXTRA", "FAITH", "FALSE", "FAULT", "FIBER", "FIELD", "FIFTH", "FIFTY", "FIGHT", "FINAL",
+      "FIRST", "FIXED", "FLASH", "FLEET", "FLOOR", "FLUID", "FOCUS", "FORCE", "FORTH", "FORTY",
+      "FORUM", "FOUND", "FRAME", "FRANK", "FRAUD", "FRESH", "FRONT", "FRUIT", "FULLY", "FUNNY"
+    ];
+
+    let currentWord = "";
+    let targetWord = "";
+    let morphingLetters = ["", "", "", "", ""];
+    let animationFrame;
+    let isAnimating = false;
+
+    // Get random word
+    function getRandomWord() {
+      return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+    }
+
+    // Get random letter
+    function getRandomLetter() {
+      return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+  </script>
+  <script id="3" type="text/html">
+    <style>
+      .morphing-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        background: white;
+        font-family: Arial, sans-serif;
+        padding: 40px;
+      }
+
+      .word-display {
+        display: flex;
+        gap: 10px;
+        margin: 40px 0;
+        font-family: Arial, sans-serif;
+      }
+
+      .letter-container {
+        width: 80px;
+        height: 120px;
+        position: relative;
+      }
+
+      .letter-svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .letter-path {
+        fill: black;
+        stroke: none;
+      }
+
+      .controls {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .morph-button {
+        background: black;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+      }
+
+      .morph-button:hover {
+        background: #333;
+      }
+
+      .morph-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      .auto-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+    </style>
+  </script>
+  <script id="5" type="module" pinned="">
+    import * as d3 from "npm:d3";
+
+    // Organic morphing with continuous movement like mold
+    let currentWordIndex = 0;
+    let isAnimating = false;
+    let animationFrame;
+    let autoMode = false;
+    let autoInterval;
+    let continuousFrame;
+
+    // Font metrics for Arial
+    const fontSize = 80;
+    const fontFamily = 'Arial, sans-serif';
+
+    // Create a temporary canvas to measure text
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    measureCtx.font = `bold ${fontSize}px Arial`;
+
+    // Generate organic, flowing paths for letters using actual Arial measurements
+    function generateOrganicPath(letter, time = 0, baseWobble = 0) {
+      const metrics = measureCtx.measureText(letter);
+      const width = metrics.width;
+      const height = fontSize;
+
+      // Base organic movement
+      const wobble1 = Math.sin(time * 0.003 + baseWobble) * 2;
+      const wobble2 = Math.cos(time * 0.004 + baseWobble * 1.3) * 1.5;
+      const wobble3 = Math.sin(time * 0.005 + baseWobble * 0.7) * 1;
+
+      // Create organic letter shapes that constantly move
+      const paths = {
+        'A': `M${20 + wobble1},${100 + wobble2}
+              Q${25 + wobble3},${80 + wobble1} ${30 + wobble2},${60 + wobble3}
+              Q${35 + wobble1},${40 + wobble2} ${40 + wobble3},${20 + wobble1}
+              Q${45 + wobble2},${40 + wobble3} ${50 + wobble1},${60 + wobble2}
+              Q${55 + wobble3},${80 + wobble1} ${60 + wobble2},${100 + wobble3}
+              M${25 + wobble1},${70 + wobble2} Q${40 + wobble3},${65 + wobble1} ${55 + wobble2},${70 + wobble3}`,
+
+        'B': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              Q${45 + wobble2},${95 + wobble3} ${50 + wobble1},${80 + wobble2}
+              Q${55 + wobble3},${65 + wobble1} ${50 + wobble2},${50 + wobble3}
+              Q${55 + wobble1},${35 + wobble2} ${50 + wobble3},${20 + wobble1}
+              Q${35 + wobble2},${15 + wobble3} ${20 + wobble1},${20 + wobble2}
+              M${20 + wobble3},${50 + wobble1} Q${35 + wobble2},${45 + wobble3} ${45 + wobble1},${50 + wobble2}`,
+
+        'C': `M${60 + wobble1},${30 + wobble2} Q${45 + wobble3},${15 + wobble1} ${30 + wobble2},${20 + wobble3}
+              Q${15 + wobble1},${25 + wobble2} ${20 + wobble3},${50 + wobble1}
+              Q${15 + wobble2},${75 + wobble3} ${30 + wobble1},${80 + wobble2}
+              Q${45 + wobble3},${85 + wobble1} ${60 + wobble2},${70 + wobble3}`,
+
+        'D': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              Q${50 + wobble2},${95 + wobble3} ${60 + wobble1},${70 + wobble2}
+              Q${70 + wobble3},${45 + wobble1} ${60 + wobble2},${30 + wobble3}
+              Q${50 + wobble1},${5 + wobble2} ${20 + wobble3},${20 + wobble1}`,
+
+        'E': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              L${60 + wobble2},${100 + wobble3} M${20 + wobble1},${60 + wobble2}
+              L${50 + wobble3},${60 + wobble1} M${20 + wobble2},${20 + wobble3}
+              L${60 + wobble1},${20 + wobble2}`,
+
+        'F': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              M${20 + wobble2},${60 + wobble3} L${50 + wobble1},${60 + wobble2}
+              M${20 + wobble3},${20 + wobble1} L${60 + wobble2},${20 + wobble3}`,
+
+        'G': `M${60 + wobble1},${30 + wobble2} Q${45 + wobble3},${15 + wobble1} ${30 + wobble2},${20 + wobble3}
+              Q${15 + wobble1},${25 + wobble2} ${20 + wobble3},${50 + wobble1}
+              Q${15 + wobble2},${75 + wobble3} ${30 + wobble1},${80 + wobble2}
+              Q${45 + wobble3},${85 + wobble1} ${60 + wobble2},${70 + wobble3}
+              L${60 + wobble1},${55 + wobble2} L${45 + wobble3},${55 + wobble1}`,
+
+        'H': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              M${60 + wobble2},${20 + wobble3} L${60 + wobble1},${100 + wobble2}
+              M${20 + wobble3},${60 + wobble1} L${60 + wobble2},${60 + wobble3}`,
+
+        'I': `M${30 + wobble1},${20 + wobble2} L${50 + wobble3},${20 + wobble1}
+              M${40 + wobble2},${20 + wobble3} L${40 + wobble1},${100 + wobble2}
+              M${30 + wobble3},${100 + wobble1} L${50 + wobble2},${100 + wobble3}`,
+
+        'J': `M${30 + wobble1},${20 + wobble2} L${60 + wobble3},${20 + wobble1}
+              M${50 + wobble2},${20 + wobble3} L${50 + wobble1},${80 + wobble2}
+              Q${50 + wobble3},${95 + wobble1} ${35 + wobble2},${100 + wobble3}
+              Q${20 + wobble1},${95 + wobble2} ${25 + wobble3},${80 + wobble1}`,
+
+        'K': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              M${20 + wobble2},${60 + wobble3} L${60 + wobble1},${20 + wobble2}
+              M${35 + wobble3},${50 + wobble1} L${60 + wobble2},${100 + wobble3}`,
+
+        'L': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${100 + wobble1}
+              L${60 + wobble2},${100 + wobble3}`,
+
+        'M': `M${15 + wobble1},${100 + wobble2} L${15 + wobble3},${20 + wobble1}
+              Q${25 + wobble2},${15 + wobble3} ${35 + wobble1},${25 + wobble2}
+              Q${45 + wobble3},${35 + wobble1} ${40 + wobble2},${50 + wobble3}
+              Q${45 + wobble1},${35 + wobble2} ${55 + wobble3},${25 + wobble1}
+              Q${65 + wobble2},${15 + wobble3} ${75 + wobble1},${20 + wobble2}
+              L${75 + wobble3},${100 + wobble1}`,
+
+        'N': `M${20 + wobble1},${100 + wobble2} L${20 + wobble3},${20 + wobble1}
+              Q${35 + wobble2},${35 + wobble3} ${50 + wobble1},${50 + wobble2}
+              Q${65 + wobble3},${65 + wobble1} ${60 + wobble2},${80 + wobble3}
+              L${60 + wobble1},${20 + wobble2}`,
+
+        'O': `M${40 + wobble1},${15 + wobble2} Q${60 + wobble3},${20 + wobble1} ${65 + wobble2},${40 + wobble3}
+              Q${70 + wobble1},${60 + wobble2} ${65 + wobble3},${80 + wobble1}
+              Q${60 + wobble2},${100 + wobble3} ${40 + wobble1},${105 + wobble2}
+              Q${20 + wobble3},${100 + wobble1} ${15 + wobble2},${80 + wobble3}
+              Q${10 + wobble1},${60 + wobble2} ${15 + wobble3},${40 + wobble1}
+              Q${20 + wobble2},${20 + wobble3} ${40 + wobble1},${15 + wobble2}`,
+
+        'P': `M${20 + wobble1},${100 + wobble2} L${20 + wobble3},${20 + wobble1}
+              Q${45 + wobble2},${15 + wobble3} ${55 + wobble1},${30 + wobble2}
+              Q${65 + wobble3},${45 + wobble1} ${55 + wobble2},${60 + wobble3}
+              Q${45 + wobble1},${55 + wobble2} ${20 + wobble3},${60 + wobble1}`,
+
+        'Q': `M${40 + wobble1},${15 + wobble2} Q${60 + wobble3},${20 + wobble1} ${65 + wobble2},${40 + wobble3}
+              Q${70 + wobble1},${60 + wobble2} ${65 + wobble3},${80 + wobble1}
+              Q${60 + wobble2},${100 + wobble3} ${40 + wobble1},${105 + wobble2}
+              Q${20 + wobble3},${100 + wobble1} ${15 + wobble2},${80 + wobble3}
+              Q${10 + wobble1},${60 + wobble2} ${15 + wobble3},${40 + wobble1}
+              Q${20 + wobble2},${20 + wobble3} ${40 + wobble1},${15 + wobble2}
+              M${50 + wobble3},${75 + wobble1} L${65 + wobble2},${90 + wobble3}`,
+
+        'R': `M${20 + wobble1},${100 + wobble2} L${20 + wobble3},${20 + wobble1}
+              Q${45 + wobble2},${15 + wobble3} ${55 + wobble1},${30 + wobble2}
+              Q${65 + wobble3},${45 + wobble1} ${55 + wobble2},${60 + wobble3}
+              Q${45 + wobble1},${55 + wobble2} ${20 + wobble3},${60 + wobble1}
+              M${35 + wobble2},${60 + wobble3} Q${50 + wobble1},${75 + wobble2} ${65 + wobble3},${100 + wobble1}`,
+
+        'S': `M${60 + wobble1},${25 + wobble2} Q${45 + wobble3},${10 + wobble1} ${25 + wobble2},${20 + wobble3}
+              Q${15 + wobble1},${30 + wobble2} ${25 + wobble3},${40 + wobble1}
+              Q${35 + wobble2},${50 + wobble3} ${45 + wobble1},${55 + wobble2}
+              Q${55 + wobble3},${60 + wobble1} ${45 + wobble2},${70 + wobble3}
+              Q${35 + wobble1},${80 + wobble2} ${55 + wobble3},${90 + wobble1}
+              Q${75 + wobble2},${80 + wobble3} ${60 + wobble1},${95 + wobble2}`,
+
+        'T': `M${20 + wobble1},${20 + wobble2} L${70 + wobble3},${20 + wobble1}
+              M${45 + wobble2},${20 + wobble3} L${45 + wobble1},${100 + wobble2}`,
+
+        'U': `M${20 + wobble1},${20 + wobble2} L${20 + wobble3},${75 + wobble1}
+              Q${20 + wobble2},${95 + wobble3} ${40 + wobble1},${100 + wobble2}
+              Q${60 + wobble3},${95 + wobble1} ${60 + wobble2},${75 + wobble3}
+              L${60 + wobble1},${20 + wobble2}`,
+
+        'V': `M${15 + wobble1},${20 + wobble2} Q${25 + wobble3},${60 + wobble1} ${40 + wobble2},${100 + wobble3}
+              Q${55 + wobble1},${60 + wobble2} ${65 + wobble3},${20 + wobble1}`,
+
+        'W': `M${15 + wobble1},${20 + wobble2} Q${20 + wobble3},${60 + wobble1} ${25 + wobble2},${100 + wobble3}
+              Q${35 + wobble1},${80 + wobble2} ${40 + wobble3},${60 + wobble1}
+              Q${45 + wobble2},${80 + wobble3} ${55 + wobble1},${100 + wobble2}
+              Q${60 + wobble3},${60 + wobble1} ${65 + wobble2},${20 + wobble3}`,
+
+        'X': `M${20 + wobble1},${20 + wobble2} Q${35 + wobble3},${35 + wobble1} ${50 + wobble2},${50 + wobble3}
+              Q${65 + wobble1},${65 + wobble2} ${80 + wobble3},${80 + wobble1}
+              M${80 + wobble2},${20
+  </script>
+</notebook>

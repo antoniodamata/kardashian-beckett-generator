@@ -1,0 +1,210 @@
+<!doctype html>
+<notebook theme="sun-faded">
+  <title>Untitled</title>
+  <script id="2" type="module" pinned="">
+    // List of 100+ five-letter words for the generator
+    const fiveLetterWords = [
+      "about", "above", "abuse", "actor", "acute", "admit", "adopt", "adult", "after", "again",
+      "agent", "agree", "ahead", "alarm", "album", "alert", "alien", "align", "alike", "alive",
+      "allow", "alone", "along", "alter", "amber", "amend", "among", "anger", "angle", "angry",
+      "apart", "apple", "apply", "arena", "argue", "arise", "array", "arrow", "aside", "asset",
+      "atlas", "audio", "audit", "avoid", "awake", "award", "aware", "badly", "baker", "bases",
+      "basic", "batch", "beach", "began", "begin", "being", "below", "bench", "billy", "birth",
+      "black", "blame", "blank", "blast", "blind", "block", "blood", "bloom", "blown", "blues",
+      "blunt", "blush", "board", "boost", "booth", "bound", "brain", "brand", "brass", "brave",
+      "bread", "break", "breed", "brief", "bring", "broad", "broke", "brown", "brush", "build",
+      "built", "burst", "buyer", "cable", "cache", "catch", "cause", "chain", "chair", "chaos",
+      "charm", "chart", "chase", "cheap", "check", "chest", "chief", "child", "china", "chose",
+      "civil", "claim", "class", "clean", "clear", "click", "climb", "clock", "close", "cloud",
+      "coach", "coast", "could", "count", "court", "cover", "craft", "crash", "crazy", "cream"
+    ];
+
+    display("Word list loaded: " + fiveLetterWords.length + " words");
+  </script>
+  <script id="3" type="module" pinned="">
+    const morphContainer = htl.html`
+      <div style="
+        font-family: Arial, sans-serif;
+        background: white;
+        padding: 40px;
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+      ">
+        <div id="word-display" style="
+          font-size: 72px;
+          font-weight: bold;
+          color: black;
+          margin: 40px 0;
+          min-height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          filter: blur(2px);
+          letter-spacing: 8px;
+        ">READY</div>
+
+        <div style="margin: 20px 0; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Blur Level</label>
+            <input type="range" id="blur-slider" min="0" max="10" value="2" step="0.5"
+                   style="width: 120px;">
+            <span id="blur-value" style="font-size: 12px; margin-left: 5px;">2px</span>
+          </div>
+
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Morph Speed</label>
+            <input type="range" id="speed-slider" min="50" max="1000" value="200" step="50"
+                   style="width: 120px;">
+            <span id="speed-value" style="font-size: 12px; margin-left: 5px;">200ms</span>
+          </div>
+
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Randomness</label>
+            <input type="range" id="random-slider" min="0" max="100" value="70" step="10"
+                   style="width: 120px;">
+            <span id="random-value" style="font-size: 12px; margin-left: 5px;">70%</span>
+          </div>
+        </div>
+
+        <button id="start-btn" style="
+          background: black;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          font-size: 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          margin: 10px;
+        ">Start Morphing</button>
+
+        <button id="stop-btn" style="
+          background: #666;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          font-size: 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          margin: 10px;
+        ">Stop</button>
+      </div>
+    `;
+
+    display(morphContainer);
+  </script>
+  <script id="4" type="module" pinned="">
+    // Morphing state and controls
+    let morphingInterval;
+    let currentWord = "READY";
+    let targetWord = "";
+    let morphingActive = false;
+
+    // Get DOM elements
+    const wordDisplay = morphContainer.querySelector('#word-display');
+    const blurSlider = morphContainer.querySelector('#blur-slider');
+    const speedSlider = morphContainer.querySelector('#speed-slider');
+    const randomSlider = morphContainer.querySelector('#random-slider');
+    const startBtn = morphContainer.querySelector('#start-btn');
+    const stopBtn = morphContainer.querySelector('#stop-btn');
+
+    // Update display values
+    function updateSliderValues() {
+      morphContainer.querySelector('#blur-value').textContent = blurSlider.value + 'px';
+      morphContainer.querySelector('#speed-value').textContent = speedSlider.value + 'ms';
+      morphContainer.querySelector('#random-value').textContent = randomSlider.value + '%';
+
+      // Update blur in real-time
+      wordDisplay.style.filter = `blur(${blurSlider.value}px)`;
+    }
+
+    // Add event listeners for sliders
+    blurSlider.addEventListener('input', updateSliderValues);
+    speedSlider.addEventListener('input', updateSliderValues);
+    randomSlider.addEventListener('input', updateSliderValues);
+
+    // Initialize slider values
+    updateSliderValues();
+
+    // Generate random letter
+    function getRandomLetter() {
+      return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+
+    // Morph current word towards target word
+    function morphStep() {
+      if (!morphingActive) return;
+
+      const randomness = parseInt(randomSlider.value);
+      let newWord = "";
+
+      for (let i = 0; i < 5; i++) {
+        if (Math.random() * 100 < randomness) {
+          // Random letter based on randomness setting
+          newWord += getRandomLetter();
+        } else if (targetWord && i < targetWord.length) {
+          // Move towards target letter
+          if (currentWord[i] === targetWord[i].toUpperCase()) {
+            newWord += currentWord[i];
+          } else {
+            // Gradually change to target letter
+            if (Math.random() < 0.3) {
+              newWord += targetWord[i].toUpperCase();
+            } else {
+              newWord += getRandomLetter();
+            }
+          }
+        } else {
+          newWord += getRandomLetter();
+        }
+      }
+
+      currentWord = newWord;
+      wordDisplay.textContent = currentWord;
+
+      // Occasionally pick a new target word
+      if (Math.random() < 0.1) {
+        targetWord = fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+      }
+    }
+
+    // Start morphing
+    function startMorphing() {
+      if (morphingActive) return;
+
+      morphingActive = true;
+      targetWord = fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+
+      morphingInterval = setInterval(() => {
+        morphStep();
+      }, parseInt(speedSlider.value));
+
+      startBtn.style.background = '#666';
+      stopBtn.style.background = 'black';
+    }
+
+    // Stop morphing
+    function stopMorphing() {
+      morphingActive = false;
+      if (morphingInterval) {
+        clearInterval(morphingInterval);
+      }
+
+      startBtn.style.background = 'black';
+      stopBtn.style.background = '#666';
+    }
+
+    // Add button event listeners
+    startBtn.addEventListener('click', startMorphing);
+    stopBtn.addEventListener('click', stopMorphing);
+
+    // Clean up on cell invalidation
+    invalidation.then(() => {
+      stopMorphing();
+    });
+
+    display("Morphing generator ready! Click 'Start Morphing' to begin.");
+  </script>
+</notebook>

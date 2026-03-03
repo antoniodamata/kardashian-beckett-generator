@@ -1,0 +1,351 @@
+<!doctype html>
+<notebook theme="stark">
+  <title>Untitled</title>
+  <script id="1" type="text/markdown">
+
+  </script>
+  <script id="2" type="module" pinned="">
+    // Text Tokenization Visualizer
+    const inputText = "Hello, world! 🌍 This is a test with émojis and spëcial characters.";
+
+    // Store all prompts from the user
+    const userPrompts = [
+      "hey claude, i want you to help me to build a program that is capable of reaveling al the process of tokenisation (UTF-8 etc.) that an ai has to do in order to understand a text; can you help me with this? also, could you please save all the prompts that i've send you?",
+      "Nice! can we clean the visual a little bit? always a white font on a black background.",
+      "Nice! please, make the appearance of the caracter tokens and current tokenization section equal to the box of the input text (just a white font in a black background) Please, dont forget to add this prompt; also, I want the output text to be formally and aesthetically as equal as you read and see the text, please.",
+      "Ok! But look, i want the form of the output text to be as precise as possible, mainly the UTF-8 (hex), ok? remenber to save the prompt!",
+      "você consegue traduzir toda essa pergunta em UTF-8 ?76 6F 63 C3 AA 20 63 6F 6E 73 65 67 75 65 20 74 72 61 64 75 7A 69 72 20 74 6F 64 61 20 65 73 73 61 20 70 65 72 67 75 6E 74 61 20 65 6D 20 55 54 46 2D 38 20 3F i want the output to look like this, like if it was a poem."
+    ];
+
+    display("User Prompts History:");
+    display(htl.html`<div style="background: #111; color: #fff; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #555; font-family: monospace; font-size: 14px;">
+      ${userPrompts.map((prompt, i) => htl.html`<div style="margin-bottom: 15px; line-height: 1.4;"><strong style="color: #4CAF50;">Prompt ${i + 1}:</strong><br/><span style="color: #fff; margin-left: 10px;">${prompt}</span></div>`)}
+    </div>`);
+  </script>
+  <script id="8" type="module" pinned="">
+    // UTF-8 Hex Decoder and Poem Visualizer
+    function decodeUTF8Hex(hexString) {
+      // Remove spaces and split into pairs
+      const hexPairs = hexString.replace(/\s+/g, '').match(/.{2}/g) || [];
+
+      // Convert hex pairs to bytes
+      const bytes = hexPairs.map(hex => parseInt(hex, 16));
+
+      // Decode UTF-8 bytes to text
+      const decoder = new TextDecoder('utf-8');
+      const uint8Array = new Uint8Array(bytes);
+      const decodedText = decoder.decode(uint8Array);
+
+      return {
+        hexPairs,
+        bytes,
+        decodedText,
+        analysis: analyzeHexToText(hexPairs, decodedText)
+      };
+    }
+
+    function analyzeHexToText(hexPairs, text) {
+      const analysis = [];
+      let textIndex = 0;
+      let hexIndex = 0;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const encoder = new TextEncoder();
+        const charBytes = encoder.encode(char);
+
+        const hexBytes = [];
+        for (let j = 0; j < charBytes.length; j++) {
+          if (hexIndex < hexPairs.length) {
+            hexBytes.push(hexPairs[hexIndex]);
+            hexIndex++;
+          }
+        }
+
+        analysis.push({
+          character: char,
+          hexBytes: hexBytes,
+          codePoint: char.codePointAt(0),
+          description: char === ' ' ? 'SPACE' : char === '\n' ? 'NEWLINE' : 'CHARACTER'
+        });
+      }
+
+      return analysis;
+    }
+
+    // Your encoded message
+    const encodedMessage = "76 6F 63 C3 AA 20 63 6F 6E 73 65 67 75 65 20 74 72 61 64 75 7A 69 72 20 74 6F 64 61 20 65 73 73 61 20 70 65 72 67 75 6E 74 61 20 65 6D 20 55 54 46 2D 38 20 3F";
+
+    const decodedResult = decodeUTF8Hex(encodedMessage);
+
+    display("🎭 UTF-8 Hex Poetry Decoder 🎭");
+    display(htl.html`<div style="background: #000; color: #fff; padding: 25px; border-radius: 12px; margin: 15px 0; border: 2px solid #4CAF50; font-family: 'Georgia', serif;">
+
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #4CAF50; font-size: 24px; margin: 0; text-shadow: 0 0 10px #4CAF50;">✨ Decoded Message ✨</h2>
+      </div>
+
+      <div style="background: #111; padding: 20px; border-radius: 8px; border: 1px solid #555; margin-bottom: 25px;">
+        <div style="font-size: 18px; line-height: 1.8; text-align: center; color: #fff; font-style: italic;">
+          "${decodedResult.decodedText}"
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h3 style="color: #2196F3; font-size: 20px; margin: 0;">🔤 Poetic Breakdown 🔤</h3>
+      </div>
+
+      <div style="display: grid; gap: 15px; font-family: 'Courier New', monospace;">
+        ${decodedResult.analysis.map((item, i) => htl.html`
+          <div style="background: #222; padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <div style="background: #333; color: #4CAF50; padding: 8px 12px; border-radius: 5px; font-weight: bold; min-width: 40px; text-align: center;">
+                ${item.character === ' ' ? '␣' : item.character}
+              </div>
+              <div style="color: #2196F3; font-size: 14px;">
+                ${item.hexBytes.join(' ')}
+              </div>
+            </div>
+            <div style="color: #FFC107; font-size: 12px; text-align: right;">
+              U+${item.codePoint.toString(16).toUpperCase().padStart(4, '0')}<br/>
+              <span style="color: #FF9800; font-size: 10px;">${item.description}</span>
+            </div>
+          </div>
+        `)}
+      </div>
+
+      <div style="margin-top: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px solid #555;">
+        <div style="color: #4CAF50; font-weight: bold; margin-bottom: 10px;">📊 Poem Statistics:</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 12px;">
+          <div style="color: #2196F3;">Characters: <span style="color: #fff; font-weight: bold;">${decodedResult.decodedText.length}</span></div>
+          <div style="color: #E91E63;">Hex Bytes: <span style="color: #fff; font-weight: bold;">${decodedResult.hexPairs.length}</span></div>
+          <div style="color: #FF9800;">Words: <span style="color: #fff; font-weight: bold;">${decodedResult.decodedText.split(' ').length}</span></div>
+        </div>
+      </div>
+
+    </div>`);
+  </script>
+  <script id="3" type="module" pinned="">
+    // UTF-8 Byte Analysis with Enhanced Precision
+    function analyzeUTF8(text) {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(text);
+
+      const analysis = [];
+      let byteIndex = 0;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const codePoint = char.codePointAt(0);
+        const charBytes = encoder.encode(char);
+
+        // Enhanced hex formatting for better precision
+        const hexCodePoint = codePoint.toString(16).toUpperCase().padStart(codePoint > 0xFFFF ? 6 : 4, '0');
+        const utf8BytesHex = Array.from(charBytes).map(b => '0x' + b.toString(16).toUpperCase().padStart(2, '0'));
+        const binaryRepresentation = Array.from(charBytes).map(b => b.toString(2).padStart(8, '0'));
+
+        analysis.push({
+          character: char,
+          codePoint: codePoint,
+          hex: hexCodePoint,
+          utf8Bytes: utf8BytesHex,
+          utf8Binary: binaryRepresentation,
+          byteLength: charBytes.length,
+          category: getCharacterCategory(codePoint),
+          description: getCharacterDescription(char, codePoint)
+        });
+
+        byteIndex += charBytes.length;
+      }
+
+      return { analysis, totalBytes: bytes.length };
+    }
+
+    function getCharacterCategory(codePoint) {
+      if (codePoint < 128) return 'ASCII (7-bit)';
+      if (codePoint < 256) return 'Latin-1 Extended';
+      if (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) return 'Emoji Block';
+      if (codePoint >= 0x0080 && codePoint <= 0x024F) return 'Latin Extended';
+      if (codePoint >= 0x0370 && codePoint <= 0x03FF) return 'Greek';
+      if (codePoint >= 0x0400 && codePoint <= 0x04FF) return 'Cyrillic';
+      return 'Unicode Extended';
+    }
+
+    function getCharacterDescription(char, codePoint) {
+      if (char === ' ') return 'SPACE';
+      if (char === '\n') return 'LINE FEED';
+      if (char === '\t') return 'TAB';
+      if (char === '\r') return 'CARRIAGE RETURN';
+      if (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) return 'EMOJI';
+      if (/[a-zA-Z]/.test(char)) return 'LETTER';
+      if (/[0-9]/.test(char)) return 'DIGIT';
+      if (/[.,!?;:]/.test(char)) return 'PUNCTUATION';
+      return 'SYMBOL';
+    }
+
+    const utf8Analysis = analyzeUTF8(inputText);
+    display("UTF-8 Byte Analysis (Enhanced Precision):");
+    display(htl.html`<div style="font-family: 'Courier New', monospace; font-size: 12px; background: #000; color: #fff; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+      <div style="margin-bottom: 15px; color: #4CAF50; font-weight: bold;">
+        <strong>Total bytes:</strong> ${utf8Analysis.totalBytes} |
+        <strong>Total characters:</strong> ${utf8Analysis.analysis.length}
+      </div>
+      <table style="border-collapse: collapse; width: 100%; background: #000; color: #fff; font-family: 'Courier New', monospace;">
+        <thead>
+          <tr style="background: #222;">
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">Char</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">Description</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">Code Point</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">Unicode Hex</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">UTF-8 Bytes (Hex)</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">UTF-8 Binary</th>
+            <th style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center;">Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${utf8Analysis.analysis.map(item => htl.html`
+            <tr style="background: #111;">
+              <td style="border: 1px solid #555; padding: 8px; text-align: center; color: #fff; font-weight: bold; font-size: 14px;">${item.character === ' ' ? '␣' : item.character}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #FFC107; text-align: center; font-size: 11px;">${item.description}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #fff; text-align: center;">${item.codePoint}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #4CAF50; text-align: center; font-weight: bold;">U+${item.hex}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #2196F3; text-align: center; font-weight: bold;">${item.utf8Bytes.join(' ')}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #E91E63; text-align: center; font-size: 10px;">${item.utf8Binary.join(' ')}</td>
+              <td style="border: 1px solid #555; padding: 8px; color: #FF9800; text-align: center; font-size: 11px;">${item.category}</td>
+            </tr>
+          `)}
+        </tbody>
+      </table>
+    </div>`);
+  </script>
+  <script id="4" type="module" pinned="">
+    // Character-level Tokenization
+    function characterTokenize(text) {
+      return text.split('').map((char, index) => ({
+        token: char,
+        index: index,
+        type: 'character'
+      }));
+    }
+
+    // Word-level Tokenization
+    function wordTokenize(text) {
+      const words = text.match(/\S+/g) || [];
+      return words.map((word, index) => ({
+        token: word,
+        index: index,
+        type: 'word'
+      }));
+    }
+
+    // Subword Tokenization (simplified BPE-like)
+    function subwordTokenize(text) {
+      // This is a simplified version - real BPE is much more complex
+      const tokens = [];
+      const words = text.split(/\s+/);
+
+      words.forEach((word, wordIndex) => {
+        if (word.length <= 3) {
+          tokens.push({ token: word, index: tokens.length, type: 'subword' });
+        } else {
+          // Split longer words into subwords
+          for (let i = 0; i < word.length; i += 2) {
+            const subword = word.slice(i, i + 2);
+            tokens.push({ token: subword, index: tokens.length, type: 'subword' });
+          }
+        }
+      });
+
+      return tokens;
+    }
+
+    // UTF-8 Byte Tokenization
+    function utf8ByteTokenize(text) {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(text);
+      return Array.from(bytes).map((byte, index) => ({
+        token: byte.toString(16).toUpperCase().padStart(2, '0'),
+        index: index,
+        type: 'utf8-byte'
+      }));
+    }
+  </script>
+  <script id="5" type="module" pinned="">
+    // Interactive Tokenization Explorer
+    const textInput = view(htl.html`<textarea
+      style="width: 100%; height: 100px; font-family: monospace; padding: 15px; border: 1px solid #555; border-radius: 8px; background: #111; color: #fff; font-size: 14px;"
+      placeholder="Enter your text here to see how it gets tokenized..."
+    >${inputText}</textarea>`);
+
+    const tokenizationMethod = view(htl.html`<select style="padding: 10px; margin: 10px 0; background: #111; color: #fff; border: 1px solid #555; border-radius: 5px; font-size: 14px;">
+      <option value="character">Character-level</option>
+      <option value="word">Word-level</option>
+      <option value="subword">Subword (BPE-like)</option>
+      <option value="utf8">UTF-8 Bytes</option>
+    </select>`);
+  </script>
+  <script id="6" type="module" pinned="">
+    // Dynamic tokenization based on user input
+    function tokenizeByMethod(text, method) {
+      switch(method) {
+        case 'character':
+          return characterTokenize(text);
+        case 'word':
+          return wordTokenize(text);
+        case 'subword':
+          return subwordTokenize(text);
+        case 'utf8':
+          return utf8ByteTokenize(text);
+        default:
+          return characterTokenize(text);
+      }
+    }
+
+    const currentTokens = tokenizeByMethod(textInput, tokenizationMethod);
+
+    display("Current Tokenization:");
+    display(htl.html`<div style="background: #111; color: #fff; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #555; font-family: monospace; font-size: 14px;">
+      <div style="margin-bottom: 15px; color: #4CAF50;"><strong>Method:</strong> ${tokenizationMethod} tokenization</div>
+      <div style="margin-bottom: 15px; color: #4CAF50;"><strong>Total tokens:</strong> ${currentTokens.length}</div>
+      <div style="line-height: 1.6; word-wrap: break-word;">
+        ${currentTokens.map((token, i) => htl.html`<span style="background: #333; color: #fff; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #555; display: inline-block; font-size: 12px;">${token.token}</span>`)}
+      </div>
+    </div>`);
+  </script>
+  <script id="7" type="module" pinned="">
+    // Token Statistics and Analysis
+    const stats = {
+      totalCharacters: textInput.length,
+      totalTokens: currentTokens.length,
+      compressionRatio: (currentTokens.length / textInput.length).toFixed(3),
+      uniqueTokens: new Set(currentTokens.map(t => t.token)).size,
+      averageTokenLength: currentTokens.length > 0 ? (textInput.length / currentTokens.length).toFixed(2) : 0
+    };
+
+    display(htl.html`<div style="background: #111; color: #fff; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #555; font-family: monospace; font-size: 14px;">
+      <h3 style="color: #4CAF50; margin-top: 0; margin-bottom: 20px;">Tokenization Statistics</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="background: #222; padding: 15px; border-radius: 5px; border: 1px solid #555;">
+          <div style="color: #2196F3; font-size: 24px; font-weight: bold; margin-bottom: 5px;">${stats.totalCharacters}</div>
+          <div style="color: #fff; font-size: 12px;">Original Characters</div>
+        </div>
+        <div style="background: #222; padding: 15px; border-radius: 5px; border: 1px solid #555;">
+          <div style="color: #4CAF50; font-size: 24px; font-weight: bold; margin-bottom: 5px;">${stats.totalTokens}</div>
+          <div style="color: #fff; font-size: 12px;">Total Tokens</div>
+        </div>
+        <div style="background: #222; padding: 15px; border-radius: 5px; border: 1px solid #555;">
+          <div style="color: #FF9800; font-size: 24px; font-weight: bold; margin-bottom: 5px;">${stats.uniqueTokens}</div>
+          <div style="color: #fff; font-size: 12px;">Unique Tokens</div>
+        </div>
+        <div style="background: #222; padding: 15px; border-radius: 5px; border: 1px solid #555;">
+          <div style="color: #E91E63; font-size: 24px; font-weight: bold; margin-bottom: 5px;">${stats.compressionRatio}</div>
+          <div style="color: #fff; font-size: 12px;">Compression Ratio</div>
+        </div>
+        <div style="background: #222; padding: 15px; border-radius: 5px; border: 1px solid #555;">
+          <div style="color: #9C27B0; font-size: 24px; font-weight: bold; margin-bottom: 5px;">${stats.averageTokenLength}</div>
+          <div style="color: #fff; font-size: 12px;">Average Token Length</div>
+        </div>
+      </div>
+    </div>`);
+  </script>
+</notebook>
