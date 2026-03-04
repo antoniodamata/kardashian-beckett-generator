@@ -26,11 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare output folder
+        run: mkdir -p docs/dist
+
       - name: Build site
-        run: |
-          npm run build
-          ls
-          ls dist || mkdir dist
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
