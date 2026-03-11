@@ -4,6 +4,6 @@
   },
   "scripts": {
     "preview": "notebooks preview --root docs --template docs/nochrome.tmpl",
-    "build": "notebooks build --root docs --template docs/nochrome.tmpl --out docs/dist -- docs/**/*.html"
+    "build": "notebooks build --root docs --template docs/nochrome.tmpl --out docs/dist -- docs/**/*.html && cp docs/index.html docs/dist/index.html"
   }
 }
